@@ -88,6 +88,7 @@ public class WebhookPostTaskTest {
       .withCeTask(ceTask)
       .withProject(project)
       .withScannerContext(newScannerContextBuilder().build())
+      .withAnalysisUuid(randomAlphanumeric(40))
       .execute();
 
     ArgumentCaptor<Supplier> supplierCaptor = ArgumentCaptor.forClass(Supplier.class);
@@ -95,7 +96,7 @@ public class WebhookPostTaskTest {
       .sendProjectAnalysisUpdate(
         same(configuration),
         eq(new WebHooks.Analysis(project.getUuid(),
-          "uuid1",
+          projectAnalysis.getAnalysis().get().getAnalysisUuid(),
           ceTask.getId())),
         supplierCaptor.capture());
 

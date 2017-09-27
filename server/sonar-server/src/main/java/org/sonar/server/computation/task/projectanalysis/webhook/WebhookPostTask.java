@@ -19,12 +19,9 @@
  */
 package org.sonar.server.computation.task.projectanalysis.webhook;
 
-import java.util.Optional;
 import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
 import org.sonar.api.config.Configuration;
 import org.sonar.db.DbClient;
-import org.sonar.db.DbSession;
-import org.sonar.db.ce.CeActivityDto;
 import org.sonar.server.computation.task.projectanalysis.component.ConfigurationRepository;
 import org.sonar.server.webhook.WebHooks;
 
@@ -46,17 +43,11 @@ public class WebhookPostTask implements PostProjectAnalysisTask {
   public void finished(ProjectAnalysis analysis) {
     Configuration config = configRepository.getConfiguration();
 
-    String analysisUuid = null;
-    try (DbSession dbSession = dbClient.openSession(false)) {
-      Optional<CeActivityDto> ceActivityDto = dbClient.ceActivityDao().selectByUuid(dbSession, analysis.getCeTask().getId());
-      if (ceActivityDto.isPresent()) {
-        analysisUuid = ceActivityDto.get().getAnalysisUuid();
-      }
+    if (analysis.getAnalysis().isPresent()) {
+      webHooks.sendProjectAnalysisUpdate(
+        config,
+        new WebHooks.Analysis(analysis.getProject().getUuid(), analysis.getAnalysis().get().getAnalysisUuid(), analysis.getCeTask().getId()),
+        () -> payloadFactory.create(analysis));
     }
-
-    webHooks.sendProjectAnalysisUpdate(
-      config,
-      new WebHooks.Analysis(analysis.getProject().getUuid(), analysisUuid, analysis.getCeTask().getId()),
-      () -> payloadFactory.create(analysis));
   }
 }

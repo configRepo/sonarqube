@@ -70,6 +70,7 @@ import static java.util.Objects.requireNonNull;
  *           .setName("name")
  *           .build())
  *       .at(new Date())
+ *       .withAnalysisUuid("uuid")
  *       .withQualityGate(
  *         newQualityGateBuilder()
  *           .setId("id")
@@ -111,6 +112,7 @@ public class PostProjectAnalysisTaskTester {
   @CheckForNull
   private Branch branch;
   private ScannerContext scannerContext;
+  private String analysisUuid;
 
   private PostProjectAnalysisTaskTester(PostProjectAnalysisTask underTest) {
     this.underTest = requireNonNull(underTest, "PostProjectAnalysisTask instance cannot be null");
@@ -177,59 +179,21 @@ public class PostProjectAnalysisTaskTester {
     return this;
   }
 
+  public PostProjectAnalysisTaskTester withAnalysisUuid(@Nullable String analysisUuid) {
+    this.analysisUuid = analysisUuid;
+    return this;
+  }
+
   public PostProjectAnalysisTask.ProjectAnalysis execute() {
     requireNonNull(ceTask, CE_TASK_CAN_NOT_BE_NULL);
     requireNonNull(project, PROJECT_CAN_NOT_BE_NULL);
     requireNonNull(date, DATE_CAN_NOT_BE_NULL);
 
-    PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = new PostProjectAnalysisTask.ProjectAnalysis() {
-      @Override
-      public ScannerContext getScannerContext() {
-        return scannerContext;
-      }
+    Analysis analysis = new ProjectAnalysis.Analysis(analysisUuid, date); // FIXME ANALYSIS_UUID
+    PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = new ProjectAnalysis(ceTask, project, branch, qualityGate, analysis, scannerContext, date);
 
-      @Override
-      public CeTask getCeTask() {
-        return ceTask;
-      }
-
-      @Override
-      public Project getProject() {
-        return project;
-      }
-
-      @Override
-      public Optional<Branch> getBranch() {
-        return Optional.ofNullable(branch);
-      }
-
-      @Override
-      public QualityGate getQualityGate() {
-        return qualityGate;
-      }
-
-      @Override
-      public Date getDate() {
-        return date;
-      }
-
-      @Override
-      public Optional<Date> getAnalysisDate() {
-        return Optional.of(date);
-      }
-
-      @Override
-      public String toString() {
-        return "ProjectAnalysis{" +
-            "ceTask=" + ceTask +
-            ", project=" + project +
-            ", date=" + date.getTime() +
-            ", analysisDate=" + date.getTime() +
-            ", qualityGate=" + qualityGate +
-            '}';
-      }
-    };
-    this.underTest.finished(projectAnalysis);
+    this.underTest.
+      finished(projectAnalysis);
 
     return projectAnalysis;
   }
